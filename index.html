@@ -116,20 +116,69 @@
   }
   button#boton-enviar:disabled { opacity: 0.7; }
 
-  .mensaje-final { text-align: center; padding: 10px 0 6px 0; }
-  .mensaje-final .icono-check { font-size: 3em; margin-bottom: 6px; }
-  .mensaje-final h2 { color: var(--azul-marino); margin: 0 0 8px 0; font-size: 1.25em; }
-  .mensaje-final p { color: #5a6472; margin: 4px 0; font-size: 0.94em; }
+  .mensaje-final {
+    text-align: center;
+    padding: 20px 4px 12px 4px;
+  }
+  .mensaje-final .icono-check {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 14px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #EAF1F8;
+    border-radius: 50%;
+    font-size: 1.8em;
+  }
+  .mensaje-final h2 {
+    color: var(--azul-marino);
+    margin: 0 0 8px 0;
+    font-size: 1.4em;
+  }
+  .mensaje-final .texto-principal {
+    color: #4B5563;
+    margin: 0 auto;
+    font-size: 0.96em;
+    line-height: 1.5;
+    max-width: 380px;
+  }
+  .mensaje-final .estrellas-google {
+    color: #F5A623;
+    font-size: 1.9em;
+    letter-spacing: 3px;
+    margin: 20px 0 6px 0;
+  }
+  .mensaje-final .texto-google {
+    color: #6B7280;
+    font-size: 0.88em;
+    margin: 0 0 15px 0;
+  }
   .mensaje-final a.boton-google {
-    display: inline-block;
-    margin-top: 16px;
-    background: var(--verde);
+    display: flex;
+    width: 100%;
+    min-height: 56px;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--azul-marino), var(--azul-oscuro));
     color: white;
     text-decoration: none;
-    padding: 13px 22px;
+    padding: 15px 18px;
     border-radius: 12px;
+    font-size: 1.02em;
     font-weight: 700;
-    box-shadow: 0 4px 14px rgba(76,168,76,0.35);
+    box-shadow: 0 5px 16px rgba(6,62,137,0.28);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .mensaje-final a.boton-google:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 20px rgba(6,62,137,0.34);
+  }
+  .mensaje-final a.boton-google:active { transform: scale(0.98); }
+  .mensaje-final .tiempo-google {
+    color: #9CA3AF;
+    font-size: 0.78em;
+    margin-top: 11px;
   }
 
   .oculto { display: none; }
@@ -207,16 +256,23 @@
       <label for="comentario">✍️ ¿Qué podríamos mejorar? (opcional)</label>
       <textarea id="comentario" placeholder="Cuéntanos con confianza, leemos todos los comentarios"></textarea>
 
-      <button id="boton-enviar" onclick="enviarFormulario()">Siguiente</button>
-      <div id="mensaje-error" class="error oculto">Por favor completa la sede y las 4 calificaciones antes de enviar.</div>
+      <button id="boton-enviar" onclick="enviarFormulario()">Continuar →</button>
+      <div id="mensaje-error" class="error oculto">Por favor completa la sede y las 4 calificaciones antes de continuar.</div>
     </div>
 
     <div id="vista-gracias" class="mensaje-final oculto">
       <div class="icono-check">💙</div>
-      <h2>¡Gracias por ayudarnos a mejorar!</h2>
-      <p>Tu opinión es muy valiosa para nosotros.</p>
-      <p>Si quedaste satisfecho con tu atención, nos ayudarías mucho compartiendo tu experiencia en Google:</p>
-      <a id="boton-google" class="boton-google" href="#" target="_blank">⭐ Dejar reseña en Google</a>
+      <h2>¡Ya casi terminamos!</h2>
+      <p class="texto-principal">
+        Tu opinión nos ayuda a seguir mejorando. Si deseas, también puedes compartir tu experiencia en Google
+        para ayudar a otras personas a conocer nuestro servicio.
+      </p>
+      <div class="estrellas-google">★★★★★</div>
+      <p class="texto-google">Comparte tu experiencia en nuestra sede</p>
+      <a id="boton-google" class="boton-google" href="#" target="_blank" rel="noopener noreferrer">
+        ⭐ Compartir mi experiencia en Google →
+      </a>
+      <p class="tiempo-google">Solo te tomará unos segundos</p>
     </div>
 
   </div>
@@ -255,27 +311,35 @@
 
   function enviarFormulario() {
     const sede = document.getElementById("sede").value;
-    const comentario = document.getElementById("comentario").value;
+    const comentario = document.getElementById("comentario").value.trim();
     const errorDiv = document.getElementById("mensaje-error");
+    const botonEnviar = document.getElementById("boton-enviar");
 
     const completo = sede && respuestas.caja && respuestas.atencion && respuestas.muestras && respuestas.general;
     if (!completo) {
       errorDiv.classList.remove("oculto");
       return;
     }
+
     errorDiv.classList.add("oculto");
+    botonEnviar.disabled = true;
+    botonEnviar.textContent = "Guardando...";
 
     const datos = { sede, ...respuestas, comentario };
     const blob = new Blob([JSON.stringify(datos)], { type: "text/plain;charset=UTF-8" });
 
-    // sendBeacon garantiza que el envío se complete aunque la página se cierre justo después
+    // Guarda la encuesta en segundo plano aunque el paciente continúe hacia Google.
     const enviado = navigator.sendBeacon(URL_APPS_SCRIPT, blob);
     if (!enviado) {
-      fetch(URL_APPS_SCRIPT, { method: "POST", mode: "no-cors", body: JSON.stringify(datos) }).catch(() => {});
+      fetch(URL_APPS_SCRIPT, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify(datos)
+      }).catch(() => {});
     }
 
     actualizarBotonGoogle(sede);
-    mostrarGracias();
+    mostrarGoogle();
   }
 
   function actualizarBotonGoogle(sede) {
@@ -284,9 +348,10 @@
     boton.setAttribute("href", enlace);
   }
 
-  function mostrarGracias() {
+  function mostrarGoogle() {
     document.getElementById("vista-formulario").classList.add("oculto");
     document.getElementById("vista-gracias").classList.remove("oculto");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 </script>
 
